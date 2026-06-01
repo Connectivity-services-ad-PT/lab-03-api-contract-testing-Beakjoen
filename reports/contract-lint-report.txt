@@ -1,0 +1,6 @@
+d:/DVKN_CNNT/lab-03-api-contract-testing-Beakjoen/contracts/iot-ingestion.openapi.yaml
+ 2:6  warning  info-contact  Info object must have "contact" object.  info
+
+✖ 1 problem (0 errors, 1 warning, 0 infos, 0 hints)
+
+No results with a severity of 'error' found!

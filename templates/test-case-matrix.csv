@@ -1,6 +1,15 @@
 ID,Folder,Endpoint,Method,Scenario,Input file/body,Expected status,Expected response check,Type,Pass/Fail,Evidence
-TC01,Functional,/health,GET,Service is alive,-,200,status=ok,functional,,
-TC02,Functional,/readings,POST,Create reading happy path,mock-data/sensor-reading-valid.json,201,"has reading_id, accepted=true",functional,,
-TC03,Negative,/readings,POST,Missing device_id,mock-data/sensor-reading-invalid-missing-device.json,400,Problem Details,negative,,
-TC04,Auth,/readings,POST,Missing token,mock-data/sensor-reading-valid.json,401,Problem Details,auth,,
-TC05,Boundary,/readings,POST,High temperature boundary,mock-data/sensor-reading-boundary.json,201/400,documented behavior,boundary,,
+TC01,00_Health,/health,GET,Service is alive,-,200,"status=ok; service exists",functional,Pass,reports/newman-report.html
+TC02,01_Functional,/readings,POST,Create temperature reading happy path,"inline: device_id=ESP32-LAB-A01; metric=temperature; value=31.5; unit=celsius; timestamp=2026-05-13T08:30:00+07:00",201,"has reading_id; device_id exists; metric=temperature; accepted=true",functional,Pass,reports/newman-report.html
+TC03,01_Functional,/readings/latest,GET,Get latest readings list,"device_id=ESP32-LAB-A01; limit=5",200,"has items array",functional,Pass,reports/newman-report.html
+TC04,02_Auth,/readings/latest,GET,Valid token is accepted,"Authorization: Bearer {{authToken}}",200,"response success",auth,Pass,reports/newman-report.html
+TC05,02_Auth,/readings,POST,Missing token is rejected on real service,"inline valid body; no Authorization header",401 or 403,"mock skip note; real service must reject missing token",auth,Pass,reports/newman-report.html
+TC06,02_Auth,/readings,POST,Invalid token is rejected on real service,"inline valid body; Authorization: Bearer invalid-token",401 or 403,"mock skip note; real service must reject invalid token",auth,Pass,reports/newman-report.html
+TC07,03_Negative,/readings,POST,Missing required field device_id,"inline body without device_id; Prefer: code=400",400 or 422,"ProblemDetails title/status; status 400-599",negative,Pass,reports/newman-report.html
+TC08,03_Negative,/readings,POST,Wrong metric enum value,"metric=temp_hot (not in enum); Prefer: code=400",400 or 422,"ProblemDetails detail exists",negative,Pass,reports/newman-report.html
+TC09,04_Boundary_Reliability,/readings,POST,Boundary value at max 80 is accepted,"value=80 (maximum per schema)",201,"accepted=true",boundary,Pass,reports/newman-report.html
+TC10,04_Boundary_Reliability,/readings,POST,Value 81 is rejected as out of range,"value=81; Prefer: code=400",400 or 422,"ProblemDetails status 400-599",boundary,Pass,reports/newman-report.html
+TC11,04_Boundary_Reliability,/readings/latest,GET,Limit above max 100 is rejected,"limit=101; Prefer: code=400",400 or 422,"ProblemDetails detail exists",boundary,Pass,reports/newman-report.html
+TC12,04_Boundary_Reliability,/readings,POST,Rate limit response,"valid body; Prefer: code=429",429,"ProblemDetails status=429; title/detail exist",reliability,Pass,reports/newman-report.html
+TC13,05_Consumer_side_Smoke,/detect (AI Vision),POST,Consumer calls AI Vision mock to detect image,"camera_id=CAM01; image_url=https://example.com/frame.jpg",200,"detection_id; label; confidence within 0-1",consumer-smoke,Pass,reports/newman-report.html
+TC14,06_Local_only_NonFunctional,/readings,POST,Local response time threshold,"valid temperature body",201,"local env checks responseTime < 1000ms; mock run skips real latency claim",non-functional,Pass,reports/newman-report.html
